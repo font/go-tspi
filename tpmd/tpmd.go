@@ -38,7 +38,11 @@ func setupContext() (*tspi.Context, *tspi.TPM, error) {
 		return nil, nil, err
 	}
 
-	context.Connect()
+	err = context.Connect()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	tpm := context.GetTPM()
 	tpmpolicy, err := context.CreatePolicy(tspiconst.TSS_POLICY_USAGE)
 	if err != nil {
@@ -51,7 +55,9 @@ func setupContext() (*tspi.Context, *tspi.TPM, error) {
 }
 
 func cleanupContext(context *tspi.Context) {
-	context.Close()
+	if context != nil {
+		context.Close()
+	}
 }
 
 func loadSRK(context *tspi.Context) (*tspi.Key, error) {
@@ -352,9 +358,11 @@ func extend(rw http.ResponseWriter, request *http.Request) {
 	context, tpm, err := setupContext()
 	defer cleanupContext(context)
 
+	fmt.Printf("Received err=%v\n", err)
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		rw.Write([]byte(err.Error()))
+		fmt.Printf("Responding with err=%v\n", err)
 		return
 	}
 
@@ -371,10 +379,13 @@ func extend(rw http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	fmt.Printf("Received data=%+v\n", data)
+
 	pcrmutex.Lock()
 	err = tpm.ExtendPCR(data.Pcr, data.Data, data.Eventtype, []byte(data.Event))
 	pcrmutex.Unlock()
 
+	fmt.Printf("Received err=%v from ExtendPCR\n", err.Error())
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		rw.Write([]byte(err.Error()))

@@ -14,6 +14,7 @@
 
 package tspi
 
+// #include <string.h>
 // #include <trousers/tss.h>
 import "C"
 import (
@@ -116,9 +117,11 @@ func (tpm *TPM) ExtendPCR(pcr int, data []byte, eventtype int, event []byte) err
 	shasum := sha1.Sum(data)
 
 	if event != nil {
-		var pcrdata *C.BYTE
-		var pcrdatalen C.UINT32
+		//var pcrdata *C.BYTE
+		//var pcrdatalen C.UINT32
 
+		//eventstruct = unsafe.Pointer(C.memset(unsafe.Pointer(&eventstruct), C.int(0), C.size_t(len(eventstruct))))
+		//eventstruct = C.TSS_PCR_EVENT(C.memset(unsafe.Pointer(&eventstruct), C.int(0), C.sizeof_TSS_PCR_EVENT))
 		eventstruct.versionInfo.bMajor = 1
 		eventstruct.versionInfo.bMinor = 2
 		eventstruct.versionInfo.bRevMajor = 1
@@ -126,18 +129,20 @@ func (tpm *TPM) ExtendPCR(pcr int, data []byte, eventtype int, event []byte) err
 		eventstruct.ulPcrIndex = C.UINT32(pcr)
 		eventstruct.rgbPcrValue = (*C.BYTE)(&shasum[0])
 		eventstruct.eventType = C.TSS_EVENTTYPE(eventtype)
+		eventstruct.ulPcrValueLength = C.UINT32(len(shasum))
 		eventstruct.ulEventLength = C.UINT32(len(event))
 		eventstruct.rgbEvent = (*C.BYTE)(&event[0])
 
-		if data == nil || len(data) == 0 {
-			pcrdata = nil
-			pcrdatalen = C.UINT32(0)
-		} else {
-			pcrdata = (*C.BYTE)(&data[0])
-			pcrdatalen = C.UINT32(len(data))
-		}
+		//if data == nil || len(data) == 0 {
+		//	pcrdata = nil
+		//	pcrdatalen = C.UINT32(0)
+		//} else {
+		//	pcrdata = (*C.BYTE)(&data[0])
+		//	pcrdatalen = C.UINT32(len(data))
+		//}
 
-		err = tspiError(C.Tspi_TPM_PcrExtend(tpm.handle, C.UINT32(pcr), pcrdatalen, pcrdata, &eventstruct, &outlen, &pcrval))
+		//err = tspiError(C.Tspi_TPM_PcrExtend(tpm.handle, C.UINT32(pcr), pcrdatalen, pcrdata, &eventstruct, &outlen, &pcrval))
+		err = tspiError(C.Tspi_TPM_PcrExtend(tpm.handle, C.UINT32(pcr), C.UINT32(len(shasum)), (*C.BYTE)(&shasum[0]), nil, &outlen, &pcrval))
 	} else {
 		err = tspiError(C.Tspi_TPM_PcrExtend(tpm.handle, C.UINT32(pcr), C.UINT32(len(shasum)), (*C.BYTE)(&shasum[0]), nil, &outlen, &pcrval))
 	}

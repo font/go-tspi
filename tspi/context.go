@@ -14,6 +14,7 @@
 
 package tspi
 
+// #cgo CFLAGS: -DTSS_DEBUG=1
 // #include <trousers/tss.h>
 import "C"
 
@@ -43,7 +44,10 @@ func (context *Context) Connect() error {
 	if err != nil {
 		return err
 	}
-	C.Tspi_Context_GetTpmObject(context.context, &tpmhandle)
+	err = tspiError(C.Tspi_Context_GetTpmObject(context.context, &tpmhandle))
+	if err != nil {
+		return err
+	}
 	context.tpm = TPM{handle: tpmhandle, context: context.context}
 	return nil
 }
