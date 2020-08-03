@@ -1,6 +1,6 @@
 module github.com/google/go-tspi
 
-go 1.12
+go 1.14
 
 require (
 	github.com/google/certificate-transparency-go v1.0.21
